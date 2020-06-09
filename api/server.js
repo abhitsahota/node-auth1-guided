@@ -1,19 +1,30 @@
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
-const sessions = require('express-sessions')
+const session = require('express-session')
+const knexSessionConnect = require('connect-session-knex')
+const knexSessionStore = knexSessionConnect(session)
+// or const knexSessionConnect = require('connect-session-knex')(session)
 
 const sessionConfig = {
   name: 'session',
   secret: 'secret',
   cookie: {
     maxAge: 100 * 100 * 100,
-    secure: false,
+    secure: false, 
     httpOnly: true
   }, 
   resave: false,
   saveUninitialized: false,
 
+  // changes when we connected our session on the db
+  store: new knexSessionStore({
+    knex: require('../database/connection'), 
+    tablename: 'sessions',
+    sidfieldname: 'sid',
+    createtable: true,
+    clearInterval: 100*100*100
+  })
 }
 
 const usersRouter = require("../users/users-router.js");
@@ -24,7 +35,7 @@ const server = express();
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
-server/this.use(sessions(sessionConfig))
+server.use(session(sessionConfig))
 
 server.use("/api/users", usersRouter);
 server.use('/api/auth', authRouter)
